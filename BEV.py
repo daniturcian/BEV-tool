@@ -212,7 +212,6 @@ def precompute_bev_maps_from_plane(K, n_cam, d_cam,
 # Main pipeline
 # -----------------------------
 def main():
-    # ADAPTEAZA doar ROOT la proiectul tau
     ROOT = "dataset/2011_09_26/2011_09_26_drive_0002_sync"
 
     cam_to_cam = os.path.join(ROOT, "calib_cam_to_cam.txt")
@@ -233,17 +232,17 @@ def main():
     R_v2c = velocal["R"].reshape(3, 3)
     T_v2c = velocal["T"].reshape(3, 1)
 
-    # 2 liste frame-uri (presupunem aceleasi nume)
+    
     img_files = sorted([f for f in os.listdir(img_dir) if f.endswith(".png") or f.endswith(".jpg")])
     if not img_files:
         raise RuntimeError(f"No images found in {img_dir}")
 
-    # KITTI lidar files are .bin with same stem
+    
     def to_bin_name(img_name: str) -> str:
         stem = os.path.splitext(img_name)[0]
         return stem + ".bin"
 
-    # 3 estimeaza height/pitch/roll din primele N frame-uri (median)
+    
     N_EST = min(50, len(img_files))  # poti creste la 200 pentru mai stabil
     heights, pitches, rolls = [], [], []
 
@@ -287,7 +286,6 @@ def main():
     # 4 precompute undistort maps + BEV maps
     # (optional) stabilize K with optimal new camera matrix
     # K_new, _ = cv2.getOptimalNewCameraMatrix(K, D, (1242, 375), 0)
-    # here we keep original K for simplicity
     K_new = K.copy()
 
     # Precompute undistort map (for image size from first frame)
@@ -298,7 +296,7 @@ def main():
 
     map1, map2 = cv2.initUndistortRectifyMap(K, D, None, K_new, (W0, H0), cv2.CV_32FC1)
 
-    # BEV settings (poti schimba)
+    # BEV settings
     x_min, x_max = 0.0, 30.0
     y_min, y_max = -10.0, 10.0
     ppm = 20                
@@ -307,8 +305,6 @@ def main():
                                                       x_min=0, x_max=30,
                                                       y_min=-10, y_max=10,
                                                       ppm=20)
-    print("map_x range:", np.nanmin(bev_map_x), np.nanmax(bev_map_x))
-    print("map_y range:", np.nanmin(bev_map_y), np.nanmax(bev_map_y))
     # run all frames
     for fname in img_files:
         img_path = os.path.join(img_dir, fname)
